@@ -30,7 +30,7 @@ jobs:
           STATUS_ONLY: ${{ inputs.status_only }}
         run: |
           set -euo pipefail
-          export PATH="$HOME/.local/bin:$PATH"
+          export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:/usr/local/bin:$PATH"
           if [[ -f "$HOME/.bashrc" ]]; then
             set +u
             # shellcheck disable=SC1091
@@ -39,15 +39,29 @@ jobs:
           fi
           echo "host=$(hostname)"
           echo "user=$(whoami)"
-          command -v grok
-          grok --version
+          GROK_BIN="$(command -v grok || true)"
+          if [[ -z "$GROK_BIN" ]]; then
+            for p in "$HOME/.local/bin/grok" /usr/bin/grok /usr/local/bin/grok; do
+              if [[ -x "$p" ]]; then GROK_BIN="$p"; break; fi
+            done
+          fi
+          echo "grok_bin=${GROK_BIN:-MISSING}"
+          if [[ -n "$GROK_BIN" ]]; then
+            "$GROK_BIN" --version
+          else
+            echo "WARN grok not on PATH"
+          fi
           if [[ -n "$GROK_CWD" && -d "$GROK_CWD" ]]; then
             cd "$GROK_CWD"
-            git status -sb
-            git rev-parse --short HEAD
+            git status -sb || true
+            git rev-parse --short HEAD || true
           fi
           if [[ "$STATUS_ONLY" == "true" || -z "$GROK_PROMPT" ]]; then
             echo "status-only"
             exit 0
           fi
-          grok -p "$GROK_PROMPT"
+          if [[ -z "$GROK_BIN" ]]; then
+            echo "FAIL grok missing"
+            exit 1
+          fi
+          "$GROK_BIN" -p "$GROK_PROMPT"
