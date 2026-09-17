@@ -21,7 +21,7 @@ on:
 
 jobs:
   exec:
-    runs-on: [self-hosted, flowforge-vm]
+    runs-on: self-hosted
     steps:
       - name: Guest status + optional grok
         env:
