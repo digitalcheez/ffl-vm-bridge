@@ -18,6 +18,11 @@ on:
         required: false
         default: "false"
         type: string
+      shell:
+        description: Optional guest bash (diagnostics / PATH). Empty skip. HOLD-6.
+        required: false
+        default: ""
+        type: string
 
 jobs:
   exec:
@@ -28,6 +33,7 @@ jobs:
           GROK_CWD: ${{ inputs.cwd }}
           GROK_PROMPT: ${{ inputs.prompt }}
           STATUS_ONLY: ${{ inputs.status_only }}
+          GUEST_SHELL: ${{ inputs.shell }}
         run: |
           set -euo pipefail
           export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:/usr/local/bin:$PATH"
@@ -55,6 +61,10 @@ jobs:
             cd "$GROK_CWD"
             git status -sb || true
             git rev-parse --short HEAD || true
+          fi
+          if [[ -n "${GUEST_SHELL:-}" ]]; then
+            echo "== guest-shell =="
+            bash -lc "$GUEST_SHELL"
           fi
           if [[ "$STATUS_ONLY" == "true" || -z "$GROK_PROMPT" ]]; then
             echo "status-only"
