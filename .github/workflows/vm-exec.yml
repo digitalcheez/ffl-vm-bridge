@@ -1,0 +1,53 @@
+name: VM exec
+
+on:
+  workflow_dispatch:
+    inputs:
+      cwd:
+        description: Guest product folder
+        required: true
+        default: /home/flowforge/flowforge-projects/flowforge-booking
+        type: string
+      prompt:
+        description: grok -p prompt (empty = status only)
+        required: false
+        default: ""
+        type: string
+      status_only:
+        description: If true, print grok version + git status and exit
+        required: false
+        default: "false"
+        type: string
+
+jobs:
+  exec:
+    runs-on: [self-hosted, flowforge-vm]
+    steps:
+      - name: Guest status + optional grok
+        env:
+          GROK_CWD: ${{ inputs.cwd }}
+          GROK_PROMPT: ${{ inputs.prompt }}
+          STATUS_ONLY: ${{ inputs.status_only }}
+        run: |
+          set -euo pipefail
+          export PATH="$HOME/.local/bin:$PATH"
+          if [[ -f "$HOME/.bashrc" ]]; then
+            set +u
+            # shellcheck disable=SC1091
+            source "$HOME/.bashrc"
+            set -u
+          fi
+          echo "host=$(hostname)"
+          echo "user=$(whoami)"
+          command -v grok
+          grok --version
+          if [[ -n "$GROK_CWD" && -d "$GROK_CWD" ]]; then
+            cd "$GROK_CWD"
+            git status -sb
+            git rev-parse --short HEAD
+          fi
+          if [[ "$STATUS_ONLY" == "true" || -z "$GROK_PROMPT" ]]; then
+            echo "status-only"
+            exit 0
+          fi
+          grok -p "$GROK_PROMPT"
