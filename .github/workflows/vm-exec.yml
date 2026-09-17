@@ -27,6 +27,7 @@ on:
 jobs:
   exec:
     runs-on: self-hosted
+    timeout-minutes: 90
     steps:
       - name: Guest status + optional grok
         env:
@@ -37,6 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           export PATH="$HOME/.local/bin:$HOME/.npm-global/bin:/usr/local/bin:$PATH"
+          export GROK_DISABLE_AUTOUPDATER=1
           if [[ -f "$HOME/.bashrc" ]]; then
             set +u
             # shellcheck disable=SC1091
@@ -74,4 +76,12 @@ jobs:
             echo "FAIL grok missing"
             exit 1
           fi
-          "$GROK_BIN" -p "$GROK_PROMPT"
+          # CI: no TTY. Without --always-approve grok plans then exits.
+          set +e
+          "$GROK_BIN" --no-auto-update --no-alt-screen --always-approve -p "$GROK_PROMPT"
+          rc=$?
+          set -e
+          echo "grok_exit=$rc"
+          git status -sb || true
+          git rev-parse --short HEAD || true
+          exit "$rc"
