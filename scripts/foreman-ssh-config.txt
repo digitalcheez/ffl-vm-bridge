@@ -1,0 +1,12 @@
+# Foreman writes this on the WINDOWS box that already SSHs to the guest.
+# File: C:\Users\seanm\.ssh\config  (or the profile Foreman uses)
+# Do not put passwords here.
+
+Host flowforge-vm
+  HostName 192.168.200.128
+  User flowforge
+  ControlMaster auto
+  ControlPath ~/.ssh/cm-%r@%h:%p
+  ControlPersist 8h
+  ServerAliveInterval 30
+  ServerAliveCountMax 6
